@@ -1,6 +1,10 @@
 # Bug Report
 
-## BUG-001: Order can be placed with an empty cart
+Three defects found during an exploratory session of the purchase flow with `standard_user`.
+**BUG-1 is the main reported defect** requested by the assignment; BUG-2 and BUG-3 are lower-severity
+findings from the same session.
+
+## BUG-1: Order can be placed with an empty cart
 
 | Field | Value |
 |---|---|
@@ -10,7 +14,6 @@
 | **Reproducibility** | Always (3/3 manual attempts, also reproduced with Playwright) |
 | **Severity** | Major |
 | **Priority** | High |
-| **Date found** | 2026-10-09 |
 
 ### Summary
 
@@ -28,7 +31,7 @@ and a total of $0.00.
 1. Log in as `standard_user`.
 2. Without adding any product, click the cart icon in the top-right corner.
 3. On the **Your Cart** page (no items listed), click **Checkout**.
-4. Fill in *First Name* `John`, *Last Name* `Doe`, *Zip/Postal Code* `1000` and click **Continue**.
+4. Fill in *First Name* `Daniel`, *Last Name* `Georgiev`, *Zip/Postal Code* `1000` and click **Continue**.
 5. On **Checkout: Overview** click **Finish**.
 
 ### Expected result
@@ -46,11 +49,8 @@ created.
 
 ### Evidence
 
-| Step | Screenshot |
-|---|---|
-| Empty cart with an enabled *Checkout* button | [bug1-1-empty-cart.png](screenshots/bug1-1-empty-cart.png) |
-| Overview with no items and $0.00 total | [bug1-2-empty-overview.png](screenshots/bug1-2-empty-overview.png) |
-| Order confirmation | [bug1-3-order-complete.png](screenshots/bug1-3-order-complete.png) |
+Checkout Overview with no items, `Total: $0.00` and an enabled *Finish* button:
+[Bug1.jpg](screenshots/Bug1.jpg)
 
 No errors in the browser console.
 
@@ -78,22 +78,79 @@ with an empty cart does not lead to an order confirmation.
 
 ---
 
-## Additional observations (out of scope of the single reported bug)
+## BUG-2: Item total is displayed with a floating-point precision error
 
-These came up during the same exploratory session. They are less severe than BUG-001.
+| Field | Value |
+|---|---|
+| **Component** | Checkout Overview |
+| **Environment** | https://www.saucedemo.com · Google Chrome 153.0.8010.53 · Windows 11 Pro |
+| **User** | `standard_user` |
+| **Reproducibility** | Always |
+| **Severity** | Minor |
+| **Priority** | Medium |
 
-### OBS-1: Item total is shown with a floating-point precision error. Severity Minor, Priority Medium.
+### Steps to reproduce
 
-`standard_user`, Chrome 153. Add **Sauce Labs Onesie** ($7.99) and **Sauce Labs Fleece Jacket** ($49.99), then go
-to **Checkout: Overview**. It shows `Item total: $57.980000000000004` instead of `$57.98`. `Tax` and `Total`
-($62.62) are correct, so only the displayed value is wrong. The amount is not formatted to 2 decimals. The same
-cause shows `Item total: $0` instead of `$0.00` for an empty cart (see BUG-001).
-Evidence: [obs1-item-total-precision.jpg](screenshots/obs1-item-total-precision.jpg)
+1. Log in as `standard_user`.
+2. Add **Sauce Labs Onesie** ($7.99) and **Sauce Labs Fleece Jacket** ($49.99) to the cart.
+3. Open the cart, click **Checkout**, fill in the form and click **Continue**.
 
-### OBS-2: QTY in the cart looks editable but is read-only. Usability issue, Severity Minor, Priority Low.
+### Expected result
 
-On **Your Cart** the quantity is shown in a bordered box that looks like an input field, but it cannot be
-changed. The application does not support quantities at all (each product can be added once). There are two
-possible fixes, and the Product Owner decides which: style QTY as plain text (UI fix), or implement quantity
-editing (new feature).
-Evidence: [obs2-qty-looks-editable.jpg](screenshots/obs2-qty-looks-editable.jpg)
+`Item total: $57.98`, formatted to 2 decimals like `Tax` and `Total`.
+
+### Actual result
+
+`Item total: $57.980000000000004`. `Tax: $4.64` and `Total: $62.62` are correct, so only the displayed
+value is wrong. The same cause shows `Item total: $0` instead of `$0.00` for an empty cart (see BUG-1).
+
+### Evidence
+
+[Bug2.jpg](screenshots/Bug2.jpg)
+
+### Severity / priority rationale
+
+- **Minor:** the calculation is correct and the order can be completed; only the display is wrong.
+- **Medium:** prices are visible on the checkout page to every customer and the error looks unprofessional
+  and reduces trust right before payment. The fix is trivial (format the amount to 2 decimals).
+
+---
+
+## BUG-3: QTY in the cart is styled as an editable field but is read-only
+
+| Field | Value |
+|---|---|
+| **Component** | Cart |
+| **Environment** | https://www.saucedemo.com · Google Chrome 153.0.8010.53 · Windows 11 Pro |
+| **User** | `standard_user` |
+| **Reproducibility** | Always |
+| **Type** | Usability |
+| **Severity** | Minor |
+| **Priority** | Low |
+
+### Steps to reproduce
+
+1. Log in as `standard_user`.
+2. Add any two products to the cart, e.g. **Sauce Labs Bike Light** and **Sauce Labs Backpack**.
+3. Open the cart and click the quantity box (`1`) next to a product.
+
+### Expected result
+
+Either the quantity can be changed, or it is shown as plain text that does not look editable.
+
+### Actual result
+
+The quantity is shown in a bordered box that looks like an input field, but clicking it does nothing and the
+value cannot be changed.
+
+### Evidence
+
+[Bug3.jpg](screenshots/Bug3.jpg)
+
+### Severity / priority rationale
+
+- **Minor:** no functional impact; the user can still complete the purchase.
+- **Low:** cosmetic; it does not block the purchase.
+- The application does not support quantities at all (each product can be added once), so there are two
+  possible fixes and the Product Owner decides which: style QTY as plain text (UI fix) or implement
+  quantity editing (new feature).
