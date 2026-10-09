@@ -7,20 +7,13 @@ import com.saucedemo.pages.components.HeaderComponent;
 /** "Checkout: Complete!" step. */
 public class CheckoutCompletePage extends BasePage {
 
-    public static final String PATH = "/checkout-complete.html";
-    public static final String SUCCESS_HEADER = "Thank you for your order!";
-
     private final HeaderComponent header;
     private final Locator completeHeader = byTestId("complete-header");
 
     public CheckoutCompletePage(Page page) {
         super(page);
         this.header = new HeaderComponent(page);
-    }
-
-    public CheckoutCompletePage waitUntilLoaded() {
-        waitForPath(PATH);
-        return this;
+        waitForUrl("/checkout-complete.html");
     }
 
     public HeaderComponent header() {

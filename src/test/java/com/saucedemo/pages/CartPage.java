@@ -12,8 +12,6 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 public class CartPage extends BasePage {
 
-    private static final String PATH = "/cart.html";
-
     private final HeaderComponent header;
     private final Locator items = byTestId("inventory-item");
     private final Locator continueShoppingButton = byTestId("continue-shopping");
@@ -22,11 +20,7 @@ public class CartPage extends BasePage {
     public CartPage(Page page) {
         super(page);
         this.header = new HeaderComponent(page);
-    }
-
-    public CartPage waitUntilLoaded() {
-        waitForPath(PATH);
-        return this;
+        waitForUrl("/cart.html");
     }
 
     public HeaderComponent header() {
@@ -50,11 +44,11 @@ public class CartPage extends BasePage {
 
     public InventoryPage continueShopping() {
         continueShoppingButton.click();
-        return new InventoryPage(page).waitUntilLoaded();
+        return new InventoryPage(page);
     }
 
     public CheckoutInformationPage checkout() {
         checkoutButton.click();
-        return new CheckoutInformationPage(page).waitUntilLoaded();
+        return new CheckoutInformationPage(page);
     }
 }

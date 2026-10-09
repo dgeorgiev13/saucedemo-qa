@@ -3,112 +3,65 @@ package com.saucedemo.config;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Properties;
 
 /**
- * Central test configuration.
- * <p>
- * Resolution order for every key (first match wins):
- * <ol>
- *     <li>JVM system property, e.g. {@code -Dheadless=false}</li>
- *     <li>Environment variable in UPPER_SNAKE_CASE, e.g. {@code HEADLESS=false}</li>
- *     <li>{@code config.properties} on the test classpath</li>
- * </ol>
+ * Test configuration. A key is resolved from (first match wins):
+ * system property, environment variable in UPPER_SNAKE_CASE, {@code config.properties}.
  */
 public final class TestConfig {
 
-    private static final String CONFIG_FILE = "config.properties";
-    private static final Properties FILE_PROPERTIES = PropertiesLoader.load(CONFIG_FILE);
+    private static final Properties FILE = loadProperties("config.properties");
 
     private TestConfig() {
     }
 
     public static String baseUrl() {
-        return required("base.url");
+        return get("base.url");
     }
 
-    public static BrowserType browser() {
-        return BrowserType.from(required("browser"));
+    public static String browser() {
+        return get("browser");
     }
 
     public static boolean headless() {
-        return Boolean.parseBoolean(required("headless"));
+        return Boolean.parseBoolean(get("headless"));
     }
 
     public static double slowMo() {
-        return Double.parseDouble(required("slow.mo"));
-    }
-
-    public static double defaultTimeoutMs() {
-        return Double.parseDouble(required("default.timeout.ms"));
+        return Double.parseDouble(get("slow.mo"));
     }
 
     public static String standardUserPrefix() {
-        return required("credentials.standard.user.prefix");
+        return get("credentials.standard.user.prefix");
     }
 
-    public static Path artifactsDir() {
-        return Path.of(required("artifacts.dir"));
-    }
-
-    /** Optional value - used for secrets such as credentials that must never live in the repository. */
-    public static Optional<String> optional(String key) {
-        String fromSystem = System.getProperty(key);
-        if (isPresent(fromSystem)) {
-            return Optional.of(fromSystem);
+    public static Optional<String> find(String key) {
+        String value = System.getProperty(key);
+        if (value == null) {
+            value = System.getenv(key.toUpperCase().replace('.', '_'));
         }
-        String fromEnv = System.getenv(toEnvName(key));
-        if (isPresent(fromEnv)) {
-            return Optional.of(fromEnv);
+        if (value == null) {
+            value = FILE.getProperty(key);
         }
-        return Optional.ofNullable(FILE_PROPERTIES.getProperty(key)).filter(TestConfig::isPresent);
+        return Optional.ofNullable(value).filter(v -> !v.isBlank());
     }
 
-    private static String required(String key) {
-        return optional(key).orElseThrow(() -> new IllegalStateException(
-                "Missing configuration key '%s' (system property, env %s or %s)"
-                        .formatted(key, toEnvName(key), CONFIG_FILE)));
+    private static String get(String key) {
+        return find(key).orElseThrow(() -> new IllegalStateException("Missing configuration key: " + key));
     }
 
-    private static String toEnvName(String key) {
-        return key.toUpperCase().replace('.', '_');
-    }
-
-    private static boolean isPresent(String value) {
-        return value != null && !value.isBlank();
-    }
-
-    public enum BrowserType {
-        CHROMIUM, FIREFOX, WEBKIT;
-
-        static BrowserType from(String value) {
-            try {
-                return valueOf(value.trim().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalStateException("Unsupported browser: " + value, e);
+    public static Properties loadProperties(String resource) {
+        try (InputStream in = TestConfig.class.getClassLoader().getResourceAsStream(resource)) {
+            if (in == null) {
+                throw new IllegalStateException("Resource not found on classpath: " + resource);
             }
-        }
-    }
-
-    /** Loads a properties file from the test classpath. */
-    public static final class PropertiesLoader {
-
-        private PropertiesLoader() {
-        }
-
-        public static Properties load(String resource) {
             Properties properties = new Properties();
-            try (InputStream in = TestConfig.class.getClassLoader().getResourceAsStream(resource)) {
-                if (in == null) {
-                    throw new IllegalStateException("Resource not found on classpath: " + resource);
-                }
-                properties.load(in);
-                return properties;
-            } catch (IOException e) {
-                throw new UncheckedIOException("Cannot read " + resource, e);
-            }
+            properties.load(in);
+            return properties;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }

@@ -7,8 +7,6 @@ import com.saucedemo.model.CheckoutInfo;
 /** "Checkout: Your Information" step. */
 public class CheckoutInformationPage extends BasePage {
 
-    private static final String PATH = "/checkout-step-one.html";
-
     private final Locator firstNameInput = byTestId("firstName");
     private final Locator lastNameInput = byTestId("lastName");
     private final Locator postalCodeInput = byTestId("postalCode");
@@ -16,11 +14,7 @@ public class CheckoutInformationPage extends BasePage {
 
     public CheckoutInformationPage(Page page) {
         super(page);
-    }
-
-    public CheckoutInformationPage waitUntilLoaded() {
-        waitForPath(PATH);
-        return this;
+        waitForUrl("/checkout-step-one.html");
     }
 
     public CheckoutOverviewPage continueWith(CheckoutInfo info) {
@@ -28,6 +22,6 @@ public class CheckoutInformationPage extends BasePage {
         lastNameInput.fill(info.lastName());
         postalCodeInput.fill(info.postalCode());
         continueButton.click();
-        return new CheckoutOverviewPage(page).waitUntilLoaded();
+        return new CheckoutOverviewPage(page);
     }
 }
